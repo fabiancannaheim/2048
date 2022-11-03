@@ -20,11 +20,13 @@ HEURISTIC_WEIGHT_CORNERS = 1
 HEURISTIC_WEIGHT_NEIGHBOURS = 1
 HEURISTIC_WEIGHT_MONOTICITY = 1
 HEURISTIC_WEIGHT_EMPTY_FIELDS = 1
+HEURISTIC_WEIGHT_UNIFORMITY = 1
 
 HEURISTIC_CORNERS_MIN, HEURISTIC_CORNERS_MAX = 0, 6
 HEURISTIC_EMPTY_FIELDS_MIN, HEURISTIC_EMPTY_FIELDS_MAX = 0, 14
 HEURISTIC_MONOTICITY_MIN, HEURISTIC_MONOTICITY_MAX = 0, 8
 HEURISTIC_NEIGHBOURS_MIN, HEURISTIC_NEIGHBOURS_MAX = 0, 20
+HEURISTIC_UNIFORMITY_MIN, HEURISTIC_UNIFORMITY_MAX = 0, 16
 
 def find_best_move(board):
     result = [score_toplevel_move(i, board, max_depth(board)) for i in [UP, DOWN, LEFT, RIGHT]]
@@ -73,21 +75,23 @@ def expectimax(board, depth, max_depth, probabilistic):
 def board_score(board):
 
     corners = check_corners(board)
-    empty_fields = count_empty_fields(board)
+    empty_fields = count_empty_fields(board, normalize=True)
     neighbours = count_neighbours(board)
     monoticity = compute_monoticity(board)
+    uniformity = compute_uniformity(board)
 
     return (
             HEURISTIC_WEIGHT_CORNERS * corners
             + HEURISTIC_WEIGHT_EMPTY_FIELDS * empty_fields
             + HEURISTIC_WEIGHT_NEIGHBOURS * neighbours
             + HEURISTIC_WEIGHT_MONOTICITY * monoticity
+            + HEURISTIC_WEIGHT_UNIFORMITY * uniformity
     )
 
 
 # Heuristics
 
-def count_empty_fields(board):
+def count_empty_fields(board, normalize=False):
     zeros = 0
     for i in range(0, len(board)):
         for j in range(0, len(board[i])):
@@ -150,6 +154,13 @@ def compute_monoticity(board):
             score += 1
     return (score - HEURISTIC_MONOTICITY_MIN) / (HEURISTIC_MONOTICITY_MAX - HEURISTIC_MONOTICITY_MIN)
 
+def compute_uniformity(board):
+    uniformity = Counter(i for i in list(itertools.chain.from_iterable(board)))
+    score = 0
+    for key in uniformity:
+        if key != 0:
+            score += uniformity[key]
+    return (score - HEURISTIC_UNIFORMITY_MIN) / (HEURISTIC_UNIFORMITY_MAX - HEURISTIC_UNIFORMITY_MIN)
 
 # Helpers
 
@@ -194,14 +205,15 @@ def normalize(data):
 
 
 def max_depth(board):
-    number_empty_fields = count_empty_fields(board)
-    if number_empty_fields > 6:
-        max_depth = 2
-    elif number_empty_fields > 2:
-        max_depth = 3
+    number_empty_fields = count_empty_fields(board, normalize=False)
+    if number_empty_fields > 8:
+        return 2
+    if number_empty_fields > 4:
+        return 3
+    elif number_empty_fields > 1:
+        return 4
     else:
-        max_depth = 4
-    return max_depth
+        return 5
 
 
 def get_empty_fields(board):
