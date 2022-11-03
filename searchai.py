@@ -11,6 +11,8 @@ import random
 import game
 import sys
 import numpy as np
+import itertools
+from collections import Counter
 
 UP, DOWN, LEFT, RIGHT = 0, 1, 2, 3
 
@@ -97,7 +99,10 @@ def count_empty_fields(board, normalize=False):
         for j in range(0, len(board[i])):
             if board[i][j] == 0:
                 zeros = zeros + 1
-    return (zeros - HEURISTIC_EMPTY_FIELDS_MIN) / (HEURISTIC_EMPTY_FIELDS_MAX - HEURISTIC_EMPTY_FIELDS_MIN)
+    if normalize:
+        return (zeros - HEURISTIC_EMPTY_FIELDS_MIN) / (HEURISTIC_EMPTY_FIELDS_MAX - HEURISTIC_EMPTY_FIELDS_MIN)
+    else:
+        return zeros
 
 
 def check_corners(board):
